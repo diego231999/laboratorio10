@@ -66,4 +66,29 @@ app.get('/empleados/getManagerEmployees/:id', (req, res) => {
     });
 })
 
+app.get('/empleados/getByTitle/:title', (req, res) => {
+    let Title = req.params.title;
+
+    let query = "SELECT * FROM lab10_employees.employees where Title = ?";
+    let parameters = [Title];
+
+    conn.query(query, parameters, function (err, results) {
+        if (err) throw err;
+
+        let employeeList = [];
+        for (var j = 0; j < results.length; j++) {
+
+            employee = {
+                'EmployeeID': results[j]['EmployeeID'],
+                'LastName': results[j]['LastName'],
+                'FirstName': results[j]['FirstName'],
+                'Title': results[j]['Title']
+            };
+            employeeList.push(employee);
+        }
+
+        res.json(employeeList);
+    });
+})
+
 app.listen(port, () => console.log(`Example app listening on port port!`))

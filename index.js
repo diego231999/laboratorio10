@@ -95,6 +95,56 @@ app.get('/empleados/getByTitle/:title', (req, res) => {
         res.json(employeeList);
     });
 })
+//PREGUNTA4
+app.post('/empleados/update', bodyParser.json(),function(request, response){
+    let query = "";
+
+    let employeeId = request.body.id;
+    let correo = request.body.email;
+    let direccion = request.body.address;
+
+    console.log(`${employeeId} Recibido`);
+    console.log(`${correo} Recibido`);
+    console.log(`${direccion} Recibido`);
+
+    let parametros = [];
+
+    let status = "ok";
+    let message = "Employee updated";
+    let jsonResponse = {
+        "status": status,
+        "message": message
+    }
+
+    if(correo !== undefined && direccion !== undefined){
+        query = "update employees set Address = ? , Email = ?  where EmployeeID = ? ;";
+        parametros = [direccion, correo, employeeId];
+
+    }else{
+        if(correo === undefined){
+            query = "update employees set Address = ?  where EmployeeID = ? ;";
+            parametros = [direccion, employeeId];
+
+        }else if(direccion === undefined){
+            query = "update employees set Email = ?  where EmployeeID = ? ;";
+            parametros = [correo, employeeId];
+
+        }
+    }
+
+    conn.query(query, parametros, function (err, result){
+        console.log(query);
+        if (err) {
+            jsonResponse["status"] = "error";
+            jsonResponse["message"] = err["sqlMessage"];
+            response.status(400);
+            response.json(jsonResponse);
+        } else {
+            response.json(jsonResponse);
+        }
+    });
+
+});
 
 // PREGUNTA 5
 app.get('/productos/get', function (request, response) {

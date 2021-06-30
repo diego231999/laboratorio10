@@ -1,10 +1,14 @@
-const { response } = require('express');
+const {response} = require('express');
 const express = require('express');
+
+const bodyParser = require('body-parser');
+const multer = require('multer');
+let upload = multer();
+
 const mysql = require('mysql2');
 
 const app = express();
 const port = 3000
-const bp = require('body-parser');
 
 
 let conn = mysql.createConnection({
@@ -92,35 +96,63 @@ app.get('/empleados/getByTitle/:title', (req, res) => {
     });
 })
 
-app.post('/empleados/update', bp.urlencoded({extended: true}), function (req, res) {
-    let employeeId = req.body.EmployeeID;
-    let email = req.body.Email;
-    let address = req.body.Address;
-    let parametros;
-    let query;
-    console.log(email);
-    console.log(address);
-    if(email==null && address!=null){
-        parametros = [address, employeeId];
-        query="UPDATE employees SET address=? where employees.EmployeeID=?";
-    }else if(address==null && email!=null){
-        parametros = [email, employeeId];
-        query="UPDATE employees SET email=? where employees.EmployeeID=?";
-    }else{
-        parametros = [email,address, employeeId];
-        query="UPDATE employees SET email=?, address=? where employees.EmployeeID=?";
-    }
+// PREGUNTA 5
+app.get('/productos/get', function (request, response) {
+    let page = request.query.page;
+    console.log(page);
+    let size = 10;
+    let pageQuery = size * page - size; // depende del tamaño de la pagina
+    let query = "select  ProductID, ProductName, UnitPrice, UnitsInStock from products limit ?, ?";
+    let params = [pageQuery, size];
 
-    conn.query(query, parametros, function (err, result) {
+    conn.query(query, params, function (err, result) {
         if (err) throw err;
-
-        conn.query("SELECT * FROM employees", function (err, results) {
-            res.json(results);
-        });
+        response.json(result)
     });
 });
 
+// PREGUNTA 6
+app.post('/categorias/create', upload.none(), function (request, response) {
+    let name = request.body.name;
+    let description = request.body.description;
+    let picture = request.body.picture;
+
+    console.log(`Nombre: ${name} | Description: ${description} |  Imagen: ${picture}`);
+
+    let status = "OK";
+    let message = "Category created";
+
+    let jsonResponse = {
+        "status": status,
+        "message": message
+    }
+    // validacion de la extension
+    if (!(picture.toString().split('.')[1] === "png" || picture.toString().split('.')[1] === "jpeg")) {
+        jsonResponse["status"] = "error";
+        jsonResponse["message"] = "Picture name doesn't have correct extension";
+        response.status(400);
+        response.json(jsonResponse);
+    }
+
+    let params = {
+        CategoryName: name,
+        Description: description,
+        Picture: picture
+    };
+    let query = "insert into categories set ? ;"
+
+    conn.query(query, params, function (err, result) {
+        if (err) {
+            jsonResponse["status"] = "error";
+            jsonResponse["message"] = err["sqlMessage"];
+            response.status(400);
+            response.json(jsonResponse);
+        } else {
+            response.json(jsonResponse);
+        }
+    });
+
+
+});
 
 app.listen(port, () => console.log(`Example app listening on port port!`))
-
-
